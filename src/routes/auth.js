@@ -1,15 +1,14 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const pool = require('../config/db');
+const User = require('../models/User');
 const redisClient = require('../config/redis');
+const passwordSchema = require('../config/passwordValidator');
 
 const router = express.Router();
 
-const isPasswordComplex = (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
-
-// Registration Endpoint
+// Registration Endpoint using Sequelize and password-validator
 router.post('/register',
     body('username').isString().trim().notEmpty(),
     body('password').isString().trim().notEmpty(),
@@ -20,18 +19,21 @@ router.post('/register',
         }
         const { username, password } = req.body;
 
-        if (!isPasswordComplex(password)) {
+        // Validate password using password-validator
+        if (!passwordSchema.validate(password)) {
             return res.status(400).json({ error: 'Password does not meet complexity requirements.' });
         }
 
         try {
-            // Ensure unique username
-            const userCheck = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-            if (userCheck.rows.length > 0) {
+            // Ensure unique username using Sequelize's findOne method
+            const existingUser = await User.findOne({ where: { username } });
+            if (existingUser) {
                 return res.status(400).json({ error: 'Username already exists.' });
             }
+            // Hash the password
             const hashedPassword = await bcrypt.hash(password, 10);
-            await pool.query('INSERT INTO users (username, password) VALUES ($1, $2)', [username, hashedPassword]);
+            // Create the new user
+            await User.create({ username, password: hashedPassword });
             return res.status(200).json({ message: 'User registered successfully.' });
         } catch (error) {
             console.error("Registration error:", error);
@@ -39,7 +41,7 @@ router.post('/register',
         }
     });
 
-// Login Endpoint
+// Login Endpoint (can remain largely the same, but now uses Sequelize to query users)
 router.post('/login',
     body('username').isString().trim().notEmpty(),
     body('password').isString().trim().notEmpty(),
@@ -51,18 +53,18 @@ router.post('/login',
 
         const { username, password } = req.body;
         try {
-            const userResult = await pool.query('SELECT id, password FROM users WHERE username = $1', [username]);
-            if (userResult.rows.length === 0) {
+            // Retrieve user using Sequelize
+            const user = await User.findOne({ where: { username } });
+            if (!user) {
                 return res.status(401).json({ error: 'Authentication failed.' });
             }
-            const user = userResult.rows[0];
             const valid = await bcrypt.compare(password, user.password);
             if (!valid) {
                 return res.status(401).json({ error: 'Authentication failed.' });
             }
-
             // Generate token
             const token = jwt.sign({ userId: user.id, username }, process.env.JWT_SECRET || 'defaultsecret', { expiresIn: '1h' });
+            // Store token in Redis for session management
             redisClient.setex(`session:${user.id}`, 3600, token);
             return res.status(200).json({ message: 'Authentication successful.', token });
         } catch (error) {
@@ -71,7 +73,7 @@ router.post('/login',
         }
     });
 
-// Logout Endpoint: Invalidate the session in Redis.
+// Logout Endpoint remains the same
 router.post('/logout', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
