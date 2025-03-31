@@ -1,5 +1,6 @@
 const { Sequelize } = require("sequelize");
 
+// Future Improvement: Add dialectOptions for SSL when deploying to production environments
 const sequelize = new Sequelize(
   process.env.PGDATABASE || "authdb",
   process.env.PGUSER || "postgres",
