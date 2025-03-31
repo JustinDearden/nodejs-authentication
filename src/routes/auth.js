@@ -75,7 +75,6 @@ router.post("/login", validateLogin, async (req, res) => {
   }
 
   const { username, password } = req.body;
-
   try {
     const userData = await userStore.getUserByUsername(username);
     if (!userData) {
@@ -83,23 +82,22 @@ router.post("/login", validateLogin, async (req, res) => {
       return res.status(401).json({ error: "Authentication failed." });
     }
 
-    // Validate password
+    // Validate password for both modes
     const valid = await bcrypt.compare(password, userData.password);
     if (!valid) {
       logger.warn(`Invalid password attempt for username: ${username}`);
       return res.status(401).json({ error: "Authentication failed." });
     }
 
-    // Generate JWT token
-    // Use userData.id if available; if using Redis mode,
+    // Generate JWT token using username as identifier.
     const token = jwt.sign(
-      { userId: userData.id || username, username },
+      { username },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    // Store token in Redis for session management (works for both modes)
-    redisClient.setex(`session:${userData.id || username}`, 3600, token, (err) => {
+    // Store token in Redis for session management using the username as key.
+    redisClient.setex(`session:${username}`, 3600, token, (err) => {
       if (err) {
         logger.error(`Redis error storing token for username ${username}: ${err}`);
         return res.status(500).json({ error: "Internal server error." });
@@ -123,19 +121,27 @@ router.post("/logout", (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     logger.warn("Logout attempt with missing or invalid authorization header");
-    return res.status(401).json({ error: "Missing or invalid authorization header." });
+    return res
+      .status(401)
+      .json({ error: "Missing or invalid authorization header." });
   }
 
   const token = authHeader.split(" ")[1];
-
   try {
+    // Verify the token using the secret key
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
     // Future Improvement: Consider implementing a token blacklist mechanism for immediate token revocation.
-    redisClient.del(`session:${payload.userId}`, (err) => {
+    // Use payload.username as the session key
+    redisClient.del(`session:${payload.username}`, (err, reply) => {
       if (err) {
-        logger.error(`Redis error during logout for userId ${payload.userId}: ${err}`);
+        logger.error(`Redis error during logout for username ${payload.username}: ${err}`);
         return res.status(500).json({ error: "Internal server error." });
+      }
+      if (reply === 0) {
+        // No session key was deleted, there was no active session
+        logger.warn(`No active session found for username ${payload.username}`);
+        return res.status(404).json({ error: "No active session found." });
       }
       logger.info(`User logged out successfully: ${payload.username}`);
       return res.status(200).json({ message: "Logout successful." });

@@ -22,14 +22,11 @@ module.exports = async (req, res, next) => {
 
     // Future Improvement: Consider implementing a token blacklist mechanism for immediate token revocation.
     // Instead of relying solely on active session tokens stored in Redis, maintain a blacklist
-    // of revoked tokens. This allows you to invalidate tokens immediately (e.g., when a token
-    // is compromised or after a user logs out), even if they haven't reached their expiration time.
+    // of revoked tokens.
     // Check for an active session in Redis
-    const sessionToken = await redisGetAsync(`session:${payload.userId}`);
+    const sessionToken = await redisGetAsync(`session:${payload.username}`);
     if (!sessionToken || sessionToken !== token) {
-      logger.warn(
-        `Session token mismatch or expired for userId ${payload.userId}`
-      );
+      logger.warn(`Session token mismatch or expired for username ${payload.username}`);
       return res.status(401).json({ error: "Invalid or expired session." });
     }
 
