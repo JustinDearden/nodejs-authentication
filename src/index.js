@@ -1,13 +1,10 @@
 require("dotenv").config();
+const validateEnv = require("./config/validateEnv");
 
-// Validate required environment variables
-if (!process.env.JWT_SECRET) {
-  console.error("FATAL ERROR: JWT_SECRET is not defined.");
-  process.exit(1);
-}
-
-if (!process.env.DATASTORE) {
-  console.error("FATAL ERROR: DATASTORE is not defined.");
+try {
+  validateEnv();
+} catch (err) {
+  console.error("FATAL ERROR: Environment validation failed.", err.message);
   process.exit(1);
 }
 
