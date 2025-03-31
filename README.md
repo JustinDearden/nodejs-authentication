@@ -42,7 +42,17 @@ This is a secure and optimized authentication API built with Node.js, Express, a
 
    You can test endpoints (such as /auth/register, /auth/login, /auth/logout, and /protected) using attached Postman collection.
 
-5. **Stopping the App:**
+5. **Changing Data Storage Mode:**
+
+   For the best experience changing between `redis` and `postgres` data storage modes:
+
+   - Stop the application with `docker-compose down` or `docker compose down`.
+   - Change the `DATASTORE` variable in your `.env` file.
+   - Start the application again with `docker-compose up -d --build` or `docker compose up -d --build`.
+
+   This ensures that the database schema is created correctly based on the selected datastore.
+
+6. **Stopping the App:**
 
    To stop the application, run:
 
