@@ -6,7 +6,6 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-require("dotenv").config();
 require("express-async-errors");
 const express = require("express");
 const helmet = require("helmet");
@@ -19,11 +18,20 @@ const logger = require("./config/logger");
 
 const app = express();
 
+// Use Helmet to set secure HTTP headers
+// Future Improvement: In production, enforce HTTPS by redirecting HTTP to HTTPS and using secure cookies
+// Future Improvement: Customize Helmet configuration
+// The current default configuration sets common security headers (CSP, X-Frame-Options, etc.)
+// In production, consider customizing settings such as Content Security Policy, HSTS, and Referrer Policy
 app.use(helmet());
+
+// Enable CORS for cross-origin requests
+// Future Improvement: Configure CORS to allow only trusted origins in production
 app.use(cors());
+
+// Enable response compression for improved performance
 app.use(compression());
 
-// Future Improvement: Enforce HTTPS in production by redirecting HTTP to HTTPS and using secure cookies.
 app.use(express.json());
 
 // Global Rate Limiting
@@ -33,7 +41,7 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// Login Rate Limiting
+// Login Rate Limiting specifically for the /auth/login endpoint
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -47,7 +55,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health Check Endpoint
+// Health Check Endpoint to verify database connectivity and API status
 app.get("/health", async (req, res) => {
   try {
     await sequelize.authenticate();
@@ -58,7 +66,7 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Initialize Database
+// Initialize Database by syncing Sequelize models
 const initDb = async () => {
   try {
     await sequelize.sync();
@@ -84,3 +92,23 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   logger.info(`Auth API listening on port ${PORT}`);
 });
+
+// Graceful Shutdown: Handle termination signals to close connections cleanly
+// Future Improvement: Enhance this logic to ensure all resources (e.g., DB, cache) are properly released
+const shutdown = () => {
+  logger.info("Received kill signal, shutting down gracefully.");
+  server.close(() => {
+    logger.info("Closed out remaining connections.");
+    // Close the Sequelize connection
+    sequelize.close();
+    process.exit(0);
+  });
+  // Force shutdown if connections don't close within 10 seconds
+  setTimeout(() => {
+    logger.error("Could not close connections in time, forcefully shutting down");
+    process.exit(1);
+  }, 10000);
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
