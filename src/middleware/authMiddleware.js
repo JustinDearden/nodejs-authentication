@@ -20,6 +20,10 @@ module.exports = async (req, res, next) => {
     // Verify the token's signature and expiration
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Future Improvement: Consider implementing a token blacklist mechanism for immediate token revocation.
+    // Instead of relying solely on active session tokens stored in Redis, maintain a blacklist
+    // of revoked tokens. This allows you to invalidate tokens immediately (e.g., when a token
+    // is compromised or after a user logs out), even if they haven't reached their expiration time.
     // Check for an active session in Redis
     const sessionToken = await redisGetAsync(`session:${payload.userId}`);
     if (!sessionToken || sessionToken !== token) {

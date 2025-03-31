@@ -23,6 +23,7 @@ app.use(helmet());
 app.use(cors());
 app.use(compression());
 
+// Future Improvement: Enforce HTTPS in production by redirecting HTTP to HTTPS and using secure cookies.
 app.use(express.json());
 
 // Global Rate Limiting
