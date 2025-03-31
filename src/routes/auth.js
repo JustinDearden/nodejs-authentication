@@ -28,6 +28,7 @@ router.post("/register", validateRegister, async (req, res) => {
 
   // Validate password complexity
   const failedRules = passwordSchema.validate(password, { list: true });
+
   if (failedRules.length > 0) {
     const messages = failedRules.map(
       (rule) =>
@@ -50,6 +51,7 @@ router.post("/register", validateRegister, async (req, res) => {
 
     // Create the new user using the abstracted store
     await userStore.createUser(username, password);
+
     logger.info(`User registered successfully: ${username}`);
     return res.status(200).json({ message: "User registered successfully." });
   } catch (error) {
@@ -73,6 +75,7 @@ router.post("/login", validateLogin, async (req, res) => {
   }
 
   const { username, password } = req.body;
+
   try {
     const userData = await userStore.getUserByUsername(username);
     if (!userData) {
@@ -124,6 +127,7 @@ router.post("/logout", (req, res) => {
   }
 
   const token = authHeader.split(" ")[1];
+
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
