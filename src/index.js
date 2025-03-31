@@ -6,6 +6,11 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+if (!process.env.DATASTORE) {
+  console.error("FATAL ERROR: DATASTORE is not defined.");
+  process.exit(1);
+}
+
 require("express-async-errors");
 const express = require("express");
 const helmet = require("helmet");
