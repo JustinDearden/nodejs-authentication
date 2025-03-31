@@ -1,4 +1,4 @@
-# Node.js Take Home Challenge
+# Node.js Authentication Take Home Challenge
 
 ## Submitted by: Justin Dearden
 
@@ -28,7 +28,7 @@ This is a secure and optimized authentication API built with Node.js, Express, a
 
    `docker compose up -d --build`
 
-   This command builds the Docker images (if needed) and starts the containers for the Node.js application, PostgreSQL, and Redis.
+   This command builds the Docker images and starts the containers for the Node.js application, PostgreSQL, and Redis.
 
 4. **Access the API:**
 
@@ -111,17 +111,6 @@ This is a secure and optimized authentication API built with Node.js, Express, a
   - Provides a health check endpoint (`/health`) to verify database connectivity and overall API status.
 - **Environment Validation:**
   - Validates essential environment variables (e.g., `JWT_SECRET`) on startup, preventing misconfiguration.
-
----
-
-## Additional Notes
-
-- **Environment Variables Priority:**
-  - When running with Docker Compose, the environment variables specified in the docker-compose file will override those in your local `.env` file.
-- **Production Considerations:**
-  - In production, consider integrating centralized logging (e.g., ELK, Splunk), secure secret management, and additional error monitoring.
-- **Extensibility:**
-  - This API is built with modularity in mind. Additional features, such as advanced user roles or audit logging, can be added easily.
 
 ---
 
