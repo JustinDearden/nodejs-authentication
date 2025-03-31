@@ -16,7 +16,13 @@ This is a secure and optimized authentication API built with Node.js, Express, a
 
 2. **Set ENV Variables:**
 
-   Change `.env.example` to `.env` and set a `JWT_SECRET`
+   Rename `.env.example` to `.env` and set a `JWT_SECRET`.
+
+   **Important:** Set the `datastore` variable to either `redis` or `postgres`
+
+   - `datastore=redis` will store all user data and session data in Redis.
+   - `datastore=postgres` will store all user data in PostgreSQL and session data in Redis.
+   - [More about data storage modes](#data-storage-modes).
 
 3. **Start the Application:**
 
@@ -43,6 +49,20 @@ This is a secure and optimized authentication API built with Node.js, Express, a
    `docker-compose down` or `docker compose down`
 
 ---
+
+## Data Storage Modes
+
+_Based on clarification to the project requirements, my original implementation used Postgres for user data persistence and Redis for session storage. Upon clarifying the requirements, I was instructed to store both user data and session data in Redis—without using Postgres for user data persistence. In a real production-grade application, you wouldn't be switching back and forth like this, but for this assignment I wanted to showcase the work I did for both and left it in place for that reason._
+
+- **Redis Mode (Default):**  
+  When `DATASTORE` is set to `redis`, the application stores all user data and session data in Redis.  
+  This mode is useful for scenarios where you want fast, in-memory storage without the overhead of a relational database.
+
+- **Postgres Mode:**  
+  When `DATASTORE` is set to `postgres`, the application stores user credentials in PostgreSQL while continuing to use Redis for session management.  
+  This mode allows for persistent user data storage and is useful if you require relational data management alongside fast session token handling.
+
+> Switch the mode by simply updating the `DATASTORE` value in your `.env` file.
 
 ## Technologies Used
 
