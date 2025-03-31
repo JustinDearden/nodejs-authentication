@@ -1,12 +1,24 @@
 const envalid = require("envalid");
-const { str } = envalid;
+const { makeValidator } = envalid;
 
+// Custom validator to ensure a string is non-empty
+const nonemptystr = makeValidator((x) => {
+  if (typeof x !== "string" || x.trim() === "") {
+    throw new Error("Expected a non-empty string");
+  }
+  return x;
+});
+
+// Validates that environment variables are present and non-empty.
 function validateEnv() {
-  const env = envalid.cleanEnv(process.env, {
-    JWT_SECRET: str({ desc: "JWT secret key" }),
-    DATASTORE: str({ desc: "Determines the primary data store" }),
+  return envalid.cleanEnv(process.env, {
+    JWT_SECRET: nonemptystr({
+      desc: "JWT secret key.",
+    }),
+    DATASTORE: nonemptystr({
+      desc: "Determines primary data store.",
+    }),
   });
-  return env;
 }
 
 module.exports = validateEnv;
